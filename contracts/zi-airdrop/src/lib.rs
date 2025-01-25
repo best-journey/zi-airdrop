@@ -40,7 +40,7 @@ impl ZiAirdrop {
     pub fn distribute_tokens(e: &Env, user: Address, action: Action) {
         // Check if the action is valid and has not been performed before
         if Self::has_performed_action(e, &user, action) {
-            return;
+            panic!("You have already received this type of airdrop.");
         }
 
         let reward = match action {
