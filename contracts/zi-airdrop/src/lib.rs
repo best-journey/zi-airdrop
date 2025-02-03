@@ -70,7 +70,7 @@ impl ZiAirdrop {
         }
     }
 
-    pub fn set_balance(e: &Env, addr: Address, amount: u128) {
+    fn set_balance(e: &Env, addr: Address, amount: u128) {
         // Store the updated balance in storage
         e.storage().persistent().set(&addr, &amount);
     }
@@ -78,6 +78,22 @@ impl ZiAirdrop {
     fn has_performed_action(e: &Env, user: &Address, action: Action) -> bool {
         let key = (user.clone(), action);
         e.storage().instance().has(&key)
+    }
+
+    pub fn get_status(e: &Env, user: Address) -> u128 {
+        if Self::has_performed_action(e, &user, Action::ChangeTheme) {
+            return 3;
+        }
+
+        if Self::has_performed_action(e, &user, Action::CreateParticles) {
+            return 2;
+        }
+
+        if Self::has_performed_action(e, &user, Action::SpinCube) {
+            return 1;
+        }
+
+        0
     }
 
     fn mark_action_performed(e: &Env, user: &Address, action: Action) {
