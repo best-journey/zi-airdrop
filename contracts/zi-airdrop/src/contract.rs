@@ -1,5 +1,7 @@
+use crate::admin::{
+    has_administrator, read_administrator, read_config, write_administrator, write_config, Config
+};
 use soroban_sdk::{contract, contractimpl, token::TokenClient, Address, Env};
-use crate::admin::{has_administrator, read_administrator, write_administrator};
 
 #[contract]
 pub struct ZiAirdrop;
@@ -13,11 +15,16 @@ impl ZiAirdrop {
         write_administrator(&e, &admin);
     }
 
+    pub fn set_config(e: &Env, config: Config) {
+        let admin = read_administrator(&e);
+        admin.require_auth();
+        write_config(&e, &config);
+    }
+
     pub fn distribute_tokens(
         e: Env,
         sender: Address,
         recipient: Address,
-        token_id: Address,
         action: u32,
     ) -> bool {
         sender.require_auth();
@@ -30,7 +37,9 @@ impl ZiAirdrop {
         let amount = Self::get_airdrop_amount(&e, action);
         assert!(amount > 0, "This airdrop is not allowed");
 
-        let token = TokenClient::new(&e, &token_id);
+        let config = read_config(&e);
+
+        let token = TokenClient::new(&e, &config.zi);
         token.transfer(&sender, &recipient, &amount);
 
         Self::set_is_performed_action(&e, &recipient, action);
@@ -56,19 +65,5 @@ impl ZiAirdrop {
     fn set_is_performed_action(e: &Env, user: &Address, action: u32) {
         let key = (user.clone(), action);
         e.storage().instance().set(&key, &true);
-    }
-}
-
-#[cfg(test)]
-
-mod test {
-    use super::*;
-    use soroban_sdk::Env;
-
-    #[test]
-    fn test_distribute_tokens() {
-        let e = Env::default();
-        let contract_id = e.register_contract(None, ZiAirdrop);
-        let client = ZiAirdropClient::new(&e, &contract_id);
     }
 }
